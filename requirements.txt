@@ -1,51 +1,47 @@
-# ==============================================================================
-# DANH SÁCH THƯ VIỆN CẦN THIẾT CHO DỰ ÁN (IE307.R11 - REACT NATIVE)
-# ==============================================================================
-# CÁCH 1 - Tải nhanh toàn bộ qua package.json:
-#   npm install
-#
-# CÁCH 2 - Tải nhanh trực tiếp từ file requirements.txt này:
-#   - Trên Windows (PowerShell):
-#     npm install (Get-Content requirements.txt | Where-Object { $_ -and -not $_.StartsWith('#') })
-#   - Trên macOS / Linux / Git Bash:
-#     grep -v '^#' requirements.txt | xargs npm install
-# ==============================================================================
+# BreakFlow — Expo SDK 58
+# Nguồn chuẩn: package.json + package-lock.json.
+# Cài toàn bộ (gồm devDependencies): npm ci
+# File này chỉ để tham khảo; không chạy npm install từ từng dòng.
 
-# 1. CORE & ĐIỀU HƯỚNG (URL / Navigation State - TV1)
-react-native-safe-area-context@4.12.0
-react-native-screens@~4.1.0
-expo-linking@~7.0.0
-expo-localization@~16.0.0
+# Dependencies
+@hookform/resolvers@^7.0.5
+@notifee/react-native@^9.1.2
+@react-native-async-storage/async-storage@2.2.0
+@react-native-community/netinfo@12.0.1
+@react-navigation/bottom-tabs@^7.0.0
 @react-navigation/native@^7.0.0
 @react-navigation/native-stack@^7.0.0
-@react-navigation/bottom-tabs@^7.0.0
-
-# 2. QUẢN LÝ TRẠNG THÁI THEO PHÂN LOẠI DỮ LIỆU & XÁC THỰC (Yêu cầu bắt buộc)
-# - Server State: @tanstack/react-query
-# - Client / UI State: zustand
-# - Form State: react-hook-form + @hookform/resolvers
-# - Single Source of Truth Validation (Client & Backend): zod
 @tanstack/react-query@^5.59.0
-zustand@^5.0.1
-react-hook-form@^7.53.2
-@hookform/resolvers@^3.9.1
-zod@^3.23.8
-
-# 3. CHỦ ĐỀ SEMINAR 14: BỀ MẶT NGOÀI ỨNG DỤNG (Notification Actions, Widgets - TV4)
-@notifee/react-native@^9.1.2
-
-# 4. XÁC THỰC OAUTH, BẢO MẬT PHIÊN, MẠNG & LƯU TRỮ CỤC BỘ (TV2 & TV3)
-expo-auth-session@~6.0.0
-expo-crypto@~14.0.0
-expo-secure-store@~14.0.0
-@react-native-async-storage/async-storage@1.23.1
-@react-native-community/netinfo@11.4.1
 axios@^1.7.7
 dayjs@^1.11.13
+expo@~58.0.23
+expo-auth-session@~58.0.0
+expo-crypto@~58.0.0
+expo-dev-client@~58.0.18
+expo-linking@~58.0.0
+expo-localization@~58.0.0
+expo-secure-store@~58.0.0
+expo-status-bar@~58.0.0
+react@19.3.0
+react-dom@19.3.0
+react-hook-form@^7.91.0
+react-native@0.88.1
+react-native-safe-area-context@~5.11.1
+react-native-screens@~4.30.1
+react-native-web@^0.21.4
+zod@^4.6.7
+zustand@^5.0.1
 
-# 5. KIỂM THỬ & TYPESCRIPT (TV5)
-jest@^29.7.0
-jest-expo@~52.0.0
-@testing-library/react-native@^12.8.1
-@testing-library/jest-native@^5.4.3
-typescript@~5.3.3
+# DevDependencies
+@babel/core@^7.25.2
+@testing-library/react-native@^14.1.0
+@types/jest@^30.0.0
+@types/react@~19.3.0
+eslint@^9.39.5
+jest@^30.0.0
+jest-expo@~58.0.14
+ts-node-dev@^2.0.0
+typescript@~6.0.3
+@react-native/jest-preset@0.88.1
+test-renderer@^1.0.0
+eslint-config-expo@~58.0.4

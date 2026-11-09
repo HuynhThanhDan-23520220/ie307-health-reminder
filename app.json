@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "scheme": "breakflow",
     "orientation": "portrait",
+    "plugins": ["expo-secure-store"],
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,

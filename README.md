@@ -1,4 +1,4 @@
-# BreakFlow – Ứng dụng Nhắc Giải lao, Vận động & Nước uống (IE307.R11)
+# BreakFlow – Ứng dụng Theo dõi Sức khỏe và Nhắc nhở Hằng ngày (IE307.R11)
 
 > **Tên dự án:** **BreakFlow** (*Break* - Giải lao vận động giữa giờ & *Flow* - Duy trì nhịp độ tập trung, năng lượng)  
 > **Môn học:** IE307.R11 - Công nghệ lập trình đa nền tảng cho thiết bị di động (React Native)  
@@ -105,19 +105,36 @@ flowchart LR
 
 ---
 
-## 5. Hướng dẫn Tải Nhanh Thư viện cho Thành viên
+## 5. Cài đặt và chạy (Expo SDK 58)
 
-1. **Sao chép file biến môi trường:**
-   ```bash
-   cp .env.example .env
-   ```
-2. **Cách 1 – Cài đặt tự động toàn bộ thư viện qua `package.json`:**
-   ```bash
-   npm install
-   ```
-3. **Cách 2 – Xem hoặc cài đặt theo danh sách trong [`requirements.txt`](./requirements.txt):**
-   - Xem chi tiết từng nhóm thư viện theo vai trò thành viên trong file [`requirements.txt`](./requirements.txt).
-   - Hoặc chạy lệnh đọc trực tiếp từ `requirements.txt` (PowerShell):
-     ```powershell
-     npm install (Get-Content requirements.txt | Where-Object { $_ -and -not $_.StartsWith('#') })
-     ```
+Bộ phiên bản: Expo 58, React 19.3.0, React Native 0.88.1, TypeScript 6.0.3.
+Dùng Node.js 24 LTS; môi trường kiểm tra là Node 24.11.0 / npm 11.6.1.
+
+```powershell
+npm ci
+# Chỉ sao chép nếu chưa có .env; không ghi đè cấu hình riêng.
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+npm run web
+```
+
+`requirements.txt` là danh sách tham khảo được đồng bộ với manifest. Không cài từng dòng từ file đó vì sẽ làm lẫn dependencies/devDependencies và bỏ qua lockfile.
+
+### Kiểm tra trước khi tích hợp
+
+```powershell
+npm run typecheck
+npm run lint
+npm test -- --runInBand
+npm run export:check
+npx expo-doctor
+```
+
+TypeScript kế thừa cấu hình Expo, dùng `moduleResolution: bundler`, alias tương đối và không còn `baseUrl`. Không cần `ignoreDeprecations`. Trong VS Code chọn **TypeScript: Select TypeScript Version → Use Workspace Version** để dùng đúng bản 6.0.3.
+
+### Android/iOS và Notification Actions
+
+`npm run android` tạo development build Android, cần Android SDK/JDK phù hợp. `npm run ios` cần macOS/Xcode. Sau khi cài bản development build mới, chạy `npm start`. Bản native cũ của SDK 52 phải được build lại.
+
+Notifee không có sẵn trong Expo Go; web chỉ dùng kiểm tra giao diện. Bản Notifee 9.1.8 cài từ npm không chứa Expo config plugin, nên không thêm `@notifee/react-native` vào mảng plugins (sẽ làm Expo config bị lỗi). Thư viện native sử dụng autolinking; cần kiểm tra build và hành vi thông báo trên thiết bị trước khi nghiệm thu. Expo Doctor đang cảnh báo Notifee không còn được duy trì; chưa coi nó đã tương thích đầy đủ với SDK 58 chỉ vì JavaScript đóng gói được.
+
+Chi tiết nâng cấp và giới hạn kiểm chứng: [docs/sdk58-upgrade.md](docs/sdk58-upgrade.md).
