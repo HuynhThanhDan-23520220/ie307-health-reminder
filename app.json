@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "BreakFlow",
+    "slug": "breakflow-app",
+    "version": "1.0.0",
+    "scheme": "breakflow",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ie307.breakflow"
+    },
+    "android": {
+      "package": "com.ie307.breakflow"
+    }
+  }
+}
