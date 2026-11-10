@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   AppText,
   MedicalDisclaimerBanner,
@@ -30,26 +31,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
   );
 
   // Nhận dữ liệu cập nhật khi TV3 lưu thành công nhật ký và điều hướng quay về HomeTab
-  useEffect(() => {
-    const addedMinutes = route.params?.lastLoggedMinutes;
-    const addedWater = route.params?.lastLoggedWaterMl;
-    if (addedMinutes || addedWater) {
-      setDashboardData((prev) => ({
-        ...prev,
-        todayMinutes: prev.todayMinutes + (addedMinutes ?? 0),
-        waterIntakeMl: prev.waterIntakeMl + (addedWater ?? 0),
-        completedSessionsToday: addedMinutes
-          ? prev.completedSessionsToday + 1
-          : prev.completedSessionsToday,
-        continuousSittingMinutes: addedMinutes ? 0 : prev.continuousSittingMinutes,
-        weeklyTrend: prev.weeklyTrend.map((day, idx) =>
-          idx === prev.weeklyTrend.length - 1
-            ? { ...day, minutes: day.minutes + (addedMinutes ?? 0) }
-            : day
-        ),
-      }));
-    }
-  }, [route.params?.lastLoggedMinutes, route.params?.lastLoggedWaterMl]);
+  useFocusEffect(
+    useCallback(() => {
+      const addedMinutes = route.params?.lastLoggedMinutes;
+      const addedWater = route.params?.lastLoggedWaterMl;
+      if (addedMinutes || addedWater) {
+        setDashboardData((prev) => ({
+          ...prev,
+          todayMinutes: prev.todayMinutes + (addedMinutes ?? 0),
+          waterIntakeMl: prev.waterIntakeMl + (addedWater ?? 0),
+          completedSessionsToday: addedMinutes
+            ? prev.completedSessionsToday + 1
+            : prev.completedSessionsToday,
+          continuousSittingMinutes: addedMinutes ? 0 : prev.continuousSittingMinutes,
+          weeklyTrend: prev.weeklyTrend.map((day, idx) =>
+            idx === prev.weeklyTrend.length - 1
+              ? { ...day, minutes: day.minutes + (addedMinutes ?? 0) }
+              : day
+          ),
+        }));
+        navigation.setParams({
+          lastLoggedMinutes: undefined,
+          lastLoggedWaterMl: undefined,
+        });
+      }
+    }, [navigation, route.params?.lastLoggedMinutes, route.params?.lastLoggedWaterMl])
+  );
 
   const handleNavigateToActivityLog = (
     prefillMinutes: number,
