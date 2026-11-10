@@ -24,10 +24,10 @@ export const QuickNavigationCard: React.FC<QuickNavigationCardProps> = ({
   return (
     <AppCard>
       <AppText variant="subtitle" weight="bold" color={COLORS.textPrimary}>
-        ⚡ Giải lao nhanh giữa giờ (Liên kết TV3 & TV4)
+        ⚡ Giải lao nhanh giữa giờ
       </AppText>
       <AppText variant="caption" color={COLORS.textSecondary} style={styles.subtitleSpacing}>
-        Chọn nhanh hoạt động để mở Form nhập của TV3 hoặc đặt lịch nhắc Pomodoro/Vận động của TV4:
+        Một khoảng nghỉ nhỏ. Nạp lại năng lượng cho điều tiếp theo.
       </AppText>
 
       <View
@@ -39,14 +39,14 @@ export const QuickNavigationCard: React.FC<QuickNavigationCardProps> = ({
         ]}
       >
         <AppButton
-          title="Vươn vai 5p (TV3)"
+          title="Vươn vai 5p"
           iconText="🤸"
           variant="primary"
           style={styles.flexButton}
           onPress={() => onNavigateToActivityLog(5, 'stretch')}
         />
         <AppButton
-          title="Đi bộ 15p (TV3)"
+          title="Đi bộ 15p"
           iconText="👟"
           variant="accent"
           style={styles.flexButton}
@@ -63,7 +63,7 @@ export const QuickNavigationCard: React.FC<QuickNavigationCardProps> = ({
         ]}
       >
         <AppButton
-          title="Hẹn giờ nhắc đứng dậy (TV4)"
+          title="Hẹn giờ nhắc đứng dậy"
           iconText="🔔"
           variant="outline"
           style={styles.flexButton}

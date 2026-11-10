@@ -51,7 +51,7 @@ export const WeeklyTrendChartCard: React.FC<WeeklyTrendChartCardProps> = ({
                     styles.barFill,
                     {
                       height: `${heightRatio}%`,
-                      backgroundColor: metStreak ? COLORS.primary : COLORS.accent,
+                      backgroundColor: metStreak ? COLORS.primary : COLORS.primarySoft,
                     },
                   ]}
                 />
@@ -72,7 +72,7 @@ export const WeeklyTrendChartCard: React.FC<WeeklyTrendChartCardProps> = ({
           </AppText>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: COLORS.accent }]} />
+          <View style={[styles.legendDot, { backgroundColor: COLORS.primarySoft }]} />
           <AppText variant="caption" color={COLORS.textSecondary}>
             Dưới mốc 80%
           </AppText>

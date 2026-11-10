@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   StyleSheet,
   ViewStyle,
@@ -12,7 +12,7 @@ import { AppText } from './AppText';
 export interface AppButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'accent' | 'outline' | 'danger';
+  variant?: 'primary' | 'accent' | 'outline' | 'danger' | 'success';
   loading?: boolean;
   disabled?: boolean;
   iconText?: string;
@@ -49,6 +49,8 @@ export const AppButton: React.FC<AppButtonProps> = ({
 
   const getPalette = () => {
     switch (variant) {
+      case 'success':
+        return { bg: COLORS.emerald, border: COLORS.border, text: COLORS.textPrimary };
       case 'accent':
         return {
           bg: COLORS.accent,
@@ -80,17 +82,19 @@ export const AppButton: React.FC<AppButtonProps> = ({
   const palette = getPalette();
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.82}
+    <Pressable
       onPress={handleSafePress}
       disabled={isDisabled}
       accessibilityRole="button"
-      style={[
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      style={({ pressed }) => [
         styles.button,
         {
           backgroundColor: palette.bg,
-          borderColor: palette.border,
-          opacity: isDisabled ? 0.55 : 1,
+          borderColor: COLORS.border,
+          opacity: isDisabled ? 0.55 : pressed ? 0.8 : 1,
+          transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }],
+          boxShadow: pressed || isDisabled ? undefined : `3px 3px 0px ${COLORS.textPrimary}`,
         },
         style,
       ]}
@@ -103,10 +107,10 @@ export const AppButton: React.FC<AppButtonProps> = ({
         </AppText>
       ) : null}
 
-      <AppText variant="body" weight="600" color={palette.text} align="center">
+      <AppText variant="body" weight="bold" color={palette.text} align="center" style={{ flexShrink: 1 }}>
         {title}
       </AppText>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -117,14 +121,14 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm + 2,
     paddingHorizontal: SPACING.lg,
     borderRadius: RADIUS.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconSpacing: {
-    marginRight: SPACING.xs + 2,
+    marginEnd: SPACING.xs + 2,
   },
   spinner: {
-    marginRight: SPACING.xs + 2,
+    marginEnd: SPACING.xs + 2,
   },
 });

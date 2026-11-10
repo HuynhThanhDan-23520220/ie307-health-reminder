@@ -17,7 +17,7 @@ export const AppText: React.FC<AppTextProps> = ({
   variant = 'body',
   color = COLORS.textPrimary,
   weight = 'normal',
-  align = 'left',
+  align = 'auto',
   style,
   children,
   ...rest
@@ -26,7 +26,7 @@ export const AppText: React.FC<AppTextProps> = ({
 
   return (
     <Text
-      maxFontSizeMultiplier={1.3}
+      maxFontSizeMultiplier={2}
       style={[
         styles.base,
         {

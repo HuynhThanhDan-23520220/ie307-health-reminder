@@ -43,7 +43,7 @@ export const StreakAndAlertRow: React.FC<StreakAndAlertRowProps> = ({
             táo hơn và giảm mỏi lưng, cổ vai gáy.
           </AppText>
           <AppButton
-            title="Giải lao & Ghi nhanh +5 phút (TV3)"
+            title="Giải lao & Ghi nhanh +5 phút"
             variant="accent"
             onPress={onQuickBreakPress}
           />

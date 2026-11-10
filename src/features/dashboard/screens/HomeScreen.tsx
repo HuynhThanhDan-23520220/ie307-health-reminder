@@ -7,7 +7,8 @@ import {
   ScreenContainer,
 } from '../../../components';
 import { MainTabScreenProps, ActivityQuickType } from '../../../app/navigation.types';
-import { COLORS, RADIUS, SPACING } from '../../../theme';
+import { COLORS, RADIUS, SPACING, useAppTheme } from '../../../theme';
+import { DeskSessionCard } from '../components/DeskSessionCard';
 import { DailyProgressHeroCard } from '../components/DailyProgressHeroCard';
 import { StreakAndAlertRow } from '../components/StreakAndAlertRow';
 import { WeeklyTrendChartCard } from '../components/WeeklyTrendChartCard';
@@ -26,6 +27,7 @@ export type HomeScreenProps = MainTabScreenProps<'HomeTab'>;
  * ============================================================================
  */
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => {
+  const { responsive } = useAppTheme();
   const [dashboardData, setDashboardData] = useState<DashboardSummaryData>(
     INITIAL_DASHBOARD_DATA
   );
@@ -95,7 +97,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
       <View style={styles.headerContainer}>
         <View style={styles.greetingBox}>
           <AppText variant="bodySmall" weight="500" color={COLORS.textSecondary}>
-            Học tập & làm việc hiệu quả hơn mỗi ngày 🚀
+            MỖI NGÀY MỘT CHÚT TỐT HƠN
           </AppText>
           <AppText variant="heading" weight="bold" color={COLORS.textPrimary}>
             Chào {dashboardData.userName}!
@@ -103,12 +105,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
         </View>
         <View style={styles.modeTag}>
           <AppText variant="caption" weight="600" color={COLORS.primary}>
-            🎯 Focus & Active
+            ↗ BreakFlow
           </AppText>
         </View>
       </View>
 
+      <DeskSessionCard key={dashboardData.continuousSittingMinutes} initialMinutes={dashboardData.continuousSittingMinutes} thresholdMinutes={dashboardData.sittingAlertThresholdMinutes} onComplete={() => handleQuickAddLocalDemo(5, 0)} />
+
       {/* 2. Thẻ Tiến độ Vận động & Nước uống Khuyến nghị trong ngày */}
+      <View style={{ flexDirection: responsive.isTabletOrLarge && responsive.useTwoColumnRow ? 'row' : 'column', gap: 20 }}>
+      <View style={{ flex: 1.15 }}>
       <DailyProgressHeroCard
         todayMinutes={dashboardData.todayMinutes}
         dailyGoalMinutes={dashboardData.dailyGoalMinutes}
@@ -116,6 +122,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
         baseWaterGoalMl={dashboardData.baseWaterGoalMl}
       />
 
+      </View>
+      <View style={{ flex: 1 }}>
       {/* 3. Cảnh báo ngồi học/làm việc quá lâu & Thẻ Chuỗi Streak */}
       <StreakAndAlertRow
         currentStreakDays={dashboardData.currentStreakDays}
@@ -126,6 +134,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
         onQuickBreakPress={() => handleNavigateToActivityLog(5, 'stretch')}
       />
 
+      </View>
+      </View>
+      <View style={{ flexDirection: responsive.isTabletOrLarge && responsive.useTwoColumnRow ? 'row' : 'column', gap: 20 }}>
+      <View style={{ flex: 1 }}>
       {/* 4. Cụm nút điều hướng nhanh hỗ trợ TV3 & TV4 */}
       <QuickNavigationCard
         onNavigateToActivityLog={handleNavigateToActivityLog}
@@ -133,12 +145,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
         onQuickAddLocalDemo={handleQuickAddLocalDemo}
       />
 
+      </View>
+      <View style={{ flex: 1 }}>
       {/* 5. Biểu đồ phong độ 7 ngày trong tuần */}
       <WeeklyTrendChartCard
         weeklyTrend={dashboardData.weeklyTrend}
         lastWeekAverageMinutes={dashboardData.lastWeekAverageMinutes}
       />
 
+      </View>
+      </View>
       {/* 6. Lưu ý sức khỏe & Miễn trừ trách nhiệm y tế */}
       <MedicalDisclaimerBanner />
     </ScreenContainer>
@@ -152,7 +168,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: SPACING.sm,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.xxl,
   },
   greetingBox: {
     flex: 1,

@@ -38,17 +38,17 @@ export const DailyProgressHeroCard: React.FC<DailyProgressHeroCardProps> = ({
 
   return (
     <AppCard
-      backgroundColor={COLORS.primary}
-      borderColor={COLORS.primaryDark}
+      backgroundColor={COLORS.surface}
+      borderColor={COLORS.border}
       padding={responsive.isSmallScreen ? SPACING.md : SPACING.xl}
     >
       {/* Hàng tiêu đề & Huy hiệu % */}
       <View style={styles.topRow}>
         <View style={styles.titleBlock}>
-          <AppText variant="caption" weight="600" color={COLORS.primarySoft}>
-            ⚡ MỤC TIÊU VẬN ĐỘNG GIỮA GIỜ HỌC / LÀM VIỆC
+          <AppText variant="caption" weight="600" color={COLORS.textSecondary}>
+            MỤC TIÊU HÔM NAY
           </AppText>
-          <AppText variant="hero" weight="bold" color={COLORS.textOnPrimary}>
+          <AppText variant="hero" weight="bold" color={COLORS.textPrimary}>
             {todayMinutes} / {dailyGoalMinutes} phút
           </AppText>
         </View>
@@ -67,7 +67,7 @@ export const DailyProgressHeroCard: React.FC<DailyProgressHeroCardProps> = ({
 
       {/* Trạng thái giữ chuỗi (80% mục tiêu ngày) */}
       <View style={styles.streakRuleBox}>
-        <AppText variant="bodySmall" weight="500" color={COLORS.textOnPrimary}>
+        <AppText variant="bodySmall" weight="500" color={COLORS.textPrimary}>
           {isStreakMaintainedToday
             ? `🎉 Đã giữ chuỗi Streak hôm nay (Đạt ≥ ${streakRequiredMinutes} phút)!`
             : `🔥 Chỉ cần thêm ${remainingForStreak} phút giải lao nữa để giữ chuỗi Streak hôm nay!`}
@@ -77,14 +77,14 @@ export const DailyProgressHeroCard: React.FC<DailyProgressHeroCardProps> = ({
       {/* Chỉ số nước uống khuyến nghị tự tính lại */}
       <View style={styles.hydrationBox}>
         <View style={styles.hydrationHeader}>
-          <AppText variant="bodySmall" weight="600" color={COLORS.hydrationLight}>
+          <AppText variant="bodySmall" weight="600" color={COLORS.textPrimary}>
             💧 Nước uống hôm nay
           </AppText>
-          <AppText variant="bodySmall" weight="bold" color={COLORS.textOnPrimary}>
+          <AppText variant="bodySmall" weight="bold" color={COLORS.textPrimary}>
             {waterIntakeMl} / {recommendedWaterMl} ml ({waterPercent}%)
           </AppText>
         </View>
-        <AppText variant="caption" color={COLORS.primarySoft}>
+        <AppText variant="caption" color={COLORS.textSecondary}>
           Tự động cộng thêm +{recommendedWaterMl - baseWaterGoalMl}ml bù vận động từ {todayMinutes}{' '}
           phút hoạt động
         </AppText>
@@ -108,30 +108,30 @@ const styles = StyleSheet.create({
   },
   percentBadge: {
     backgroundColor: COLORS.surface,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
     borderRadius: RADIUS.full,
   },
   progressTrack: {
     height: 12,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: COLORS.surfaceMuted,
     borderRadius: RADIUS.full,
     overflow: 'hidden',
     marginBottom: SPACING.md,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#34D399',
+    backgroundColor: COLORS.primary,
     borderRadius: RADIUS.full,
   },
   streakRuleBox: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: COLORS.primaryLight,
     borderRadius: RADIUS.md,
     padding: SPACING.sm + 2,
     marginBottom: SPACING.sm,
   },
   hydrationBox: {
-    backgroundColor: 'rgba(15, 23, 42, 0.24)',
+    backgroundColor: COLORS.surfaceMuted,
     borderRadius: RADIUS.md,
     padding: SPACING.sm + 2,
   },

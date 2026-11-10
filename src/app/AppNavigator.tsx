@@ -19,8 +19,8 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
  * ============================================================================
  * KHUNG ĐIỀU HƯỚNG & CỔNG TÍCH HỢP CHO TV2, TV3, TV4
  * ============================================================================
- * Các thư mục `src/features/activity-log` (TV3), `src/features/reminders` (TV4),
- * `src/features/auth` (TV2) được giữ trống để từng thành viên chủ động triển khai.
+ * Các thư mục `src/features/activity-log`, `src/features/reminders`,
+ * `src/features/auth` được giữ trống để từng thành viên chủ động triển khai.
  */
 
 
@@ -35,26 +35,26 @@ const TV3ActivityLogSlotScreen: React.FC<MainTabScreenProps<'ActivityLogTab'>> =
     <ScreenContainer>
       <AppCard>
         <AppText variant="title" weight="bold" color={COLORS.primary}>
-          📝 Màn hình Nhật ký Vận động (TV3)
+          📝 Màn hình Nhật ký Vận động
         </AppText>
         <AppText variant="bodySmall" color={COLORS.textSecondary} style={styles.slotDesc}>
-          Thư mục triển khai: src/features/activity-log/
+          Bản xem trước nhật ký vận động. Dữ liệu hiện chỉ cập nhật trong phiên này.
         </AppText>
 
         <View style={styles.paramPreviewBox}>
           <AppText variant="bodySmall" weight="600" color={COLORS.textPrimary}>
-            Tham số nhận từ Khung điều hướng (TV1 / Deep Link):
+            Hoạt động đã chọn
           </AppText>
           <AppText variant="body" color={COLORS.primaryDark}>
-            • prefillMinutes: {prefillMinutes} phút
+            Thời lượng: {prefillMinutes} phút
           </AppText>
           <AppText variant="body" color={COLORS.primaryDark}>
-            • activityType: {activityType}
+            Hoạt động: {activityType}
           </AppText>
         </View>
 
         <AppButton
-          title={`Giả lập Lưu +${prefillMinutes} phút & Quay về Trang chủ (TV1)`}
+          title={`Ghi nhận thử +${prefillMinutes} phút & Quay về Trang chủ`}
           variant="primary"
           onPress={() =>
             navigation.navigate('HomeTab', {
@@ -78,23 +78,23 @@ const TV4RemindersSlotScreen: React.FC<MainTabScreenProps<'RemindersTab'>> = ({
     <ScreenContainer>
       <AppCard>
         <AppText variant="title" weight="bold" color={COLORS.accent}>
-          🔔 Màn hình Lịch nhắc & Chủ đề 14 (TV4)
+          🔔 Màn hình Lịch nhắc
         </AppText>
         <AppText variant="bodySmall" color={COLORS.textSecondary} style={styles.slotDesc}>
-          Thư mục triển khai: src/features/reminders/
+          Bản xem trước lịch nhắc. Tính năng đặt thông báo đang được hoàn thiện.
         </AppText>
 
         <View style={styles.paramPreviewBox}>
           <AppText variant="bodySmall" weight="600" color={COLORS.textPrimary}>
-            Tham số nhận từ Khung điều hướng (TV1 / Notification):
+            Trạng thái lịch nhắc
           </AppText>
           <AppText variant="body" color={COLORS.accent}>
-            • openCreateModal: {openCreateModal ? 'true (Mở tạo lịch nhắc)' : 'false'}
+            Tạo lời nhắc: {openCreateModal ? 'true (Mở tạo lịch nhắc)' : 'false'}
           </AppText>
         </View>
 
         <AppButton
-          title="Giả lập Bấm 'Hoàn thành (+5p)' từ Notification -> Sang TV3"
+          title="Thử ghi nhận 5 phút vận động"
           variant="accent"
           onPress={() =>
             navigation.navigate('ActivityLogTab', {
@@ -114,10 +114,10 @@ const TV2ProfileAuthSlotScreen: React.FC<MainTabScreenProps<'ProfileAuthTab'>> =
     <ScreenContainer>
       <AppCard>
         <AppText variant="title" weight="bold" color={COLORS.primaryDark}>
-          🔐 Màn hình Tài khoản & Phiên đăng nhập (TV2)
+          🔐 Màn hình Tài khoản & Phiên đăng nhập
         </AppText>
         <AppText variant="bodySmall" color={COLORS.textSecondary} style={styles.slotDesc}>
-          Thư mục triển khai: src/features/auth/ & shared/schemas/
+          Tính năng đăng nhập và quản lý tài khoản đang được hoàn thiện.
         </AppText>
       </AppCard>
     </ScreenContainer>
@@ -131,7 +131,8 @@ export const AppNavigator: React.FC = () => {
     <NavigationContainer linking={appLinkingConfig}>
       <Tab.Navigator
         initialRouteName="HomeTab"
-        screenOptions={{
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color }) => <AppText color={color} variant="title">{{ HomeTab: "⌂", ActivityLogTab: "▤", RemindersTab: "◷", ProfileAuthTab: "◎" }[route.name]}</AppText>,
           headerShown: true,
           headerStyle: {
             backgroundColor: COLORS.surface,
@@ -154,7 +155,7 @@ export const AppNavigator: React.FC = () => {
             fontSize: getFontSize('caption'),
             fontWeight: '600',
           },
-        }}
+        })}
       >
         <Tab.Screen
           name="HomeTab"
@@ -168,7 +169,7 @@ export const AppNavigator: React.FC = () => {
           name="ActivityLogTab"
           component={TV3ActivityLogSlotScreen}
           options={{
-            title: 'Nhật ký (TV3)',
+            title: 'Nhật ký',
             headerTitle: 'Ghi nhận Vận động & Nước uống',
           }}
         />
@@ -176,15 +177,15 @@ export const AppNavigator: React.FC = () => {
           name="RemindersTab"
           component={TV4RemindersSlotScreen}
           options={{
-            title: 'Lịch nhắc (TV4)',
-            headerTitle: 'Lịch nhắc Giữa giờ (Chủ đề 14)',
+            title: 'Lịch nhắc',
+            headerTitle: 'Lịch nhắc Giữa giờ',
           }}
         />
         <Tab.Screen
           name="ProfileAuthTab"
           component={TV2ProfileAuthSlotScreen}
           options={{
-            title: 'Tài khoản (TV2)',
+            title: 'Tài khoản',
             headerTitle: 'Tài khoản & Phiên',
           }}
         />

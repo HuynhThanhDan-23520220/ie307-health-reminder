@@ -10,7 +10,7 @@ export interface AppCardProps extends ViewProps {
 
 /**
  * Khung thẻ (Card) bo góc hiện đại dùng chung cho Trang chủ,
- * Form nhập vận động (TV3) và Lịch nhắc (TV4).
+ * Form nhập vận động và Lịch nhắc.
  */
 export const AppCard: React.FC<AppCardProps> = ({
   backgroundColor = COLORS.surface,
@@ -21,7 +21,7 @@ export const AppCard: React.FC<AppCardProps> = ({
   ...rest
 }) => {
   const { responsive } = useAppTheme();
-  const effectivePadding = padding ?? (responsive.isSmallScreen ? SPACING.md : SPACING.lg);
+  const effectivePadding = padding ?? (responsive.isSmallScreen ? SPACING.xl : SPACING.xxl);
 
   return (
     <View
@@ -44,12 +44,12 @@ export const AppCard: React.FC<AppCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    marginBottom: SPACING.md,
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    borderWidth: 1.5,
+    marginBottom: SPACING.lg,
+    shadowColor: COLORS.textPrimary,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    boxShadow: `3px 3px 0px ${COLORS.textPrimary}`,
   },
 });

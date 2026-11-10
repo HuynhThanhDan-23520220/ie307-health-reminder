@@ -7,26 +7,26 @@
 
 export const COLORS = {
   // Màu chủ đạo: Electric Indigo (Hiện đại, tập trung, trẻ trung)
-  primary: '#4F46E5',
-  primaryLight: '#EEF2FF',
-  primarySoft: '#C7D2FE',
-  primaryDark: '#3730A3',
+  primary: '#3B4FE4',
+  primaryLight: '#EAE5D9',
+  primarySoft: '#141413',
+  primaryDark: '#2938A8',
 
   // Màu năng lượng / Streak: Vibrant Orange-Coral
-  accent: '#F97316',
-  accentLight: '#FFF7ED',
-  accentSoft: '#FED7AA',
+  accent: '#FF5A26',
+  accentLight: '#EAE5D9',
+  accentSoft: '#141413',
 
   // Màu vận động / Hoàn thành mục tiêu: Fresh Emerald
-  emerald: '#10B981',
-  emeraldLight: '#ECFDF5',
+  emerald: '#C8F542',
+  emeraldLight: '#EAE5D9',
 
   // Màu nước uống (Hydration): Sky Cyan
-  hydration: '#0EA5E9',
-  hydrationLight: '#E0F2FE',
+  hydration: '#3B4FE4',
+  hydrationLight: '#EAE5D9',
 
   // Màu trạng thái
-  success: '#10B981',
+  success: '#C8F542',
   successLight: '#D1FAE5',
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
@@ -34,19 +34,19 @@ export const COLORS = {
   dangerLight: '#FEE2E2',
 
   // Màu nền & Bề mặt (Clean Modern Slate)
-  background: '#F4F6FB',
+  background: '#F6F3EC',
   surface: '#FFFFFF',
-  surfaceMuted: '#F1F5F9',
+  surfaceMuted: '#EAE5D9',
 
   // Màu chữ
-  textPrimary: '#0F172A',
-  textSecondary: '#475569',
-  textMuted: '#94A3B8',
+  textPrimary: '#141413',
+  textSecondary: '#625E55',
+  textMuted: '#625E55',
   textOnPrimary: '#FFFFFF',
 
   // Viền & phân cách
-  border: '#E2E8F0',
-  divider: '#F1F5F9',
+  border: '#141413',
+  divider: '#EAE5D9',
 } as const;
 
 export const SPACING = {
@@ -61,8 +61,8 @@ export const SPACING = {
 
 export const RADIUS = {
   sm: 10,
-  md: 14,
-  lg: 18,
+  md: 16,
+  lg: 20,
   xl: 24,
   full: 9999,
 } as const;
@@ -79,4 +79,4 @@ export const FONT_SIZES = {
 
 export type FontSizeVariant = keyof typeof FONT_SIZES;
 
-export const MIN_TOUCH_TARGET_SIZE = 44;
+export const MIN_TOUCH_TARGET_SIZE = 48;
