@@ -21,7 +21,7 @@ afterEach(() => jest.useRealTimers());
 test('mở trang chủ và chuyển dữ liệu từ thao tác nhanh sang nhật ký', async () => {
   await render(<App />);
 
-  expect(await screen.findByText('Chào Bùi Công Danh!')).toBeOnTheScreen();
+  expect(await screen.findByText('Hello fen')).toBeOnTheScreen();
   await fireEvent.press(screen.getByText('Vươn vai 5p'));
   await act(() => jest.advanceTimersByTimeAsync(1000));
 
