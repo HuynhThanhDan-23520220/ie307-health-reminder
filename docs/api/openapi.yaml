@@ -1,0 +1,1009 @@
+openapi: 3.1.0
+info:
+  title: IE307 Seminar Supabase API
+  version: 0.2.0
+  description: Hợp đồng bàn giao cơ bản cho Supabase Auth email/mật khẩu và bốn bảng. Các schema dữ liệu dựa trên
+    note/baocao.md mục 7. Quy ước app có thể hẹp hơn khả năng Data API. RLS lấy người dùng từ JWT. Tình trạng kiểm
+    thử và quyết định tạm thời xem INTEGRATION.md. Ví dụ dùng dữ liệu giả.
+servers:
+- url: https://brfzynzobmwwmmtdhlke.supabase.co
+security:
+- SupabaseApiKey: []
+  UserBearer: []
+tags:
+- name: Auth
+- name: Profiles
+- name: Goals
+- name: Activities
+- name: Reminders
+x-verification:
+  status: draft-for-integration
+  schema-source: note/baocao.md sections 1, 2, 7
+  provided-evidence: PostmanResult/refresh-token.json contains a session response only; request and HTTP status
+    unavailable
+  live-api-tested-by-author: false
+paths:
+  /auth/v1/token:
+    post:
+      operationId: issueSession
+      tags:
+      - Auth
+      summary: Đăng nhập email/mật khẩu hoặc làm mới phiên
+      description: grant_type=password đi cùng PasswordGrant. grant_type=refresh_token đi cùng RefreshGrant. App
+        lưu cặp token mới sau refresh; tránh gọi refresh đồng thời. Ví dụ đã ẩn thông tin xác thực. Mẫu cung cấp
+        có các trường AuthSession nhưng không kèm request và HTTP status.
+      security:
+      - SupabaseApiKey: []
+      parameters:
+      - name: grant_type
+        in: query
+        required: true
+        description: Chọn body tương ứng với grant_type.
+        schema:
+          type: string
+          enum:
+          - password
+          - refresh_token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/PasswordGrant'
+              - $ref: '#/components/schemas/RefreshGrant'
+            examples:
+              password:
+                value:
+                  email: demo@example.com
+                  password: EXAMPLE_PASSWORD
+              refresh:
+                value:
+                  refresh_token: EXAMPLE_REFRESH_TOKEN
+      responses:
+        '200':
+          description: Phiên đăng nhập.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+              examples:
+                session:
+                  value:
+                    access_token: EXAMPLE_ACCESS_TOKEN
+                    token_type: bearer
+                    expires_in: 3600
+                    refresh_token: EXAMPLE_REFRESH_TOKEN
+                    user:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      email: demo@example.com
+        '400':
+          $ref: '#/components/responses/AuthFailure'
+        '401':
+          $ref: '#/components/responses/AuthJwtFailure'
+        '403':
+          $ref: '#/components/responses/AuthFailure'
+        '422':
+          $ref: '#/components/responses/AuthFailure'
+        '429':
+          description: Vượt giới hạn Auth. Chờ trước khi thử lại.
+        default:
+          description: Lỗi gateway hoặc dịch vụ Auth. Kiểm tra Content-Type và xử lý lỗi mạng.
+  /auth/v1/logout:
+    post:
+      operationId: logoutSession
+      tags:
+      - Auth
+      summary: Đăng xuất phiên hiện tại
+      description: Tạm chọn scope=local cho bàn giao cơ bản. JWT đã cấp có thể dùng đến khi hết hạn. App xóa phiên,
+        cache dữ liệu tài khoản cũ và hủy lịch cục bộ. Khi dùng SDK phải truyền scope=local vì mặc định SDK là global.
+      parameters:
+      - name: scope
+        in: query
+        required: true
+        description: Luôn truyền local theo quy ước app.
+        schema:
+          type: string
+          const: local
+      responses:
+        '204':
+          description: Đăng xuất thành công, body rỗng.
+        '401':
+          $ref: '#/components/responses/AuthJwtFailure'
+        '403':
+          $ref: '#/components/responses/AuthJwtFailure'
+        '429':
+          description: Vượt giới hạn request.
+        default:
+          description: Lỗi dịch vụ hoặc mạng. Xử lý trạng thái đăng xuất cục bộ và dọn thông báo theo kết quả SDK.
+  /rest/v1/profiles:
+    get:
+      operationId: listProfiles
+      tags:
+      - Profiles
+      summary: Đọc hồ sơ của tài khoản hiện tại
+      parameters:
+      - name: select
+        in: query
+        required: false
+        description: Hỗ trợ cả phép chiếu ba cột đã dùng trong Postman và lấy đầy đủ cột.
+        schema:
+          type: string
+          enum:
+          - '*'
+          - user_id,display_name,time_zone
+          default: '*'
+      - $ref: '#/components/parameters/OwnerFilter'
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                  - $ref: '#/components/schemas/Profile'
+                  - $ref: '#/components/schemas/ProfileSummary'
+              examples:
+                summary:
+                  value:
+                  - user_id: 550e8400-e29b-41d4-a716-446655440000
+                    display_name: null
+                    time_zone: Asia/Ho_Chi_Minh
+                noVisibleRows:
+                  value: []
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+    patch:
+      operationId: updateProfile
+      tags:
+      - Profiles
+      summary: Cập nhật các trường hồ sơ được phép sửa
+      parameters:
+      - $ref: '#/components/parameters/OwnerRequired'
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfile'
+            examples:
+              sample:
+                value:
+                  display_name: Tên thử
+                  time_zone: Asia/Ho_Chi_Minh
+  /rest/v1/goals:
+    get:
+      operationId: listGoals
+      tags:
+      - Goals
+      summary: Đọc mục tiêu hiện tại, [] nếu chưa đặt
+      parameters:
+      - $ref: '#/components/parameters/SelectAll'
+      - $ref: '#/components/parameters/OwnerFilter'
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+    post:
+      operationId: createGoal
+      tags:
+      - Goals
+      summary: Đặt mục tiêu lần đầu
+      parameters:
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '201':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveGoal'
+            examples:
+              sample:
+                value:
+                  daily_target_minutes: 30
+      description: Database điền user_id từ auth.uid(). Nếu 409/23505 do hai lần tạo đồng thời, đọc lại mục tiêu
+        và chỉ cập nhật theo ý định người dùng. POST và PATCH là các thao tác riêng; không dùng upsert khi chưa
+        kiểm tra quyền theo cột.
+    patch:
+      operationId: updateGoal
+      tags:
+      - Goals
+      summary: Đổi mục tiêu hiện tại
+      parameters:
+      - $ref: '#/components/parameters/OwnerRequired'
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveGoal'
+            examples:
+              sample:
+                value:
+                  daily_target_minutes: 45
+  /rest/v1/activities:
+    get:
+      operationId: listActivities
+      tags:
+      - Activities
+      summary: Đọc nhật ký hoặc tìm lại bản ghi theo request_id
+      parameters:
+      - $ref: '#/components/parameters/SelectAll'
+      - $ref: '#/components/parameters/OwnerFilter'
+      - name: request_id
+        in: query
+        required: false
+        description: Tìm lại yêu cầu khi mất response hoặc gặp trùng request_id. Cùng JWT của tài khoản đã gửi.
+        schema:
+          type: string
+          pattern: ^eq\.[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+          example: eq.550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+      description: Chưa chốt lọc ngày, phân trang hoặc thứ tự. API có giới hạn số dòng theo cấu hình project; không
+        coi một response là toàn bộ lịch sử. Thống kê ngày cần lấy đủ dữ liệu của ngày trước khi nghiệm thu.
+    post:
+      operationId: createActivity
+      tags:
+      - Activities
+      summary: Lưu một lần vận động
+      parameters:
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '201':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateActivity'
+            examples:
+              sample:
+                value:
+                  duration_minutes: 12
+                  occurred_at: '2026-11-11T09:35:00+07:00'
+                  request_id: 31e40d57-7462-41e8-8e95-4a993e13b2af
+                  note: Đi bộ
+      description: Sinh request_id trước lần gửi đầu. Retry giữ nguyên request_id và payload. UNIQUE(user_id, request_id)
+        chặn bản ghi thứ hai bằng 409/23505. Đọc lại theo request_id, so sánh số phút, thời điểm quy về cùng instant
+        và note (bỏ trống được quy về null). Cùng nội dung dùng lại bản ghi; khác nội dung báo xung đột ở app. Máy
+        chủ không tự trả lại bản ghi cũ.
+  /rest/v1/reminder_schedules:
+    get:
+      operationId: listReminderSchedules
+      tags:
+      - Reminders
+      summary: Đọc cấu hình lịch nhắc của mình
+      parameters:
+      - $ref: '#/components/parameters/SelectAll'
+      - $ref: '#/components/parameters/OwnerFilter'
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReminderSchedule'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+    post:
+      operationId: createReminderSchedule
+      tags:
+      - Reminders
+      summary: Tạo cấu hình lịch nhắc
+      parameters:
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '201':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReminderSchedule'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+        '409':
+          $ref: '#/components/responses/Conflict'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReminderSchedule'
+            examples:
+              sample:
+                value:
+                  local_time: 09:00:00
+                  days_of_week:
+                  - 1
+                  - 2
+                  - 3
+                  - 4
+                  - 5
+                  enabled: true
+      description: Database lưu cấu hình; app đồng bộ lịch thông báo trên thiết bị sau khi xác nhận các dòng trả
+        về. Với PATCH/DELETE, [] nghĩa là không có dòng được xử lý. Hoãn 5 phút là thao tác cục bộ và không ghi
+        activities.
+    patch:
+      operationId: updateReminderSchedule
+      tags:
+      - Reminders
+      summary: Sửa giờ, ngày lặp hoặc bật/tắt lịch
+      parameters:
+      - $ref: '#/components/parameters/IdRequired'
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReminderSchedule'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReminderSchedule'
+            examples:
+              sample:
+                value:
+                  enabled: false
+      description: Database lưu cấu hình; app đồng bộ lịch thông báo trên thiết bị sau khi xác nhận các dòng trả
+        về. Với PATCH/DELETE, [] nghĩa là không có dòng được xử lý. Hoãn 5 phút là thao tác cục bộ và không ghi
+        activities.
+    delete:
+      operationId: deleteReminderSchedule
+      tags:
+      - Reminders
+      summary: Xóa lịch của mình
+      parameters:
+      - $ref: '#/components/parameters/IdRequired'
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '200':
+          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
+            cập.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReminderSchedule'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc lỗi máy chủ. Kiểm tra Content-Type trước khi đọc JSON.
+      description: Database lưu cấu hình; app đồng bộ lịch thông báo trên thiết bị sau khi xác nhận các dòng trả
+        về. Với PATCH/DELETE, [] nghĩa là không có dòng được xử lý. Hoãn 5 phút là thao tác cục bộ và không ghi
+        activities.
+components:
+  securitySchemes:
+    SupabaseApiKey:
+      type: apiKey
+      in: header
+      name: apikey
+    UserBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    SelectAll:
+      name: select
+      in: query
+      required: false
+      description: Lấy đầy đủ các cột. Các phép chiếu khác bổ sung khi nhóm cần.
+      schema:
+        type: string
+        const: '*'
+        default: '*'
+    OwnerFilter:
+      name: user_id
+      in: query
+      required: false
+      description: Bộ lọc tùy chọn để kiểm thử A/B. Danh tính và quyền sở hữu vẫn lấy từ JWT.
+      schema:
+        type: string
+        pattern: ^eq\.[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+        example: eq.550e8400-e29b-41d4-a716-446655440000
+    OwnerRequired:
+      name: user_id
+      in: query
+      required: true
+      description: Lọc đúng UID hiện tại khi sửa hồ sơ hoặc mục tiêu. Đây là yêu cầu của hợp đồng app, cần luôn
+        truyền để tránh cập nhật ngoài ý định.
+      schema:
+        type: string
+        pattern: ^eq\.[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+        example: eq.550e8400-e29b-41d4-a716-446655440000
+    IdRequired:
+      name: id
+      in: query
+      required: true
+      description: ID lịch cần sửa hoặc xóa. Luôn truyền bộ lọc này; RLS tiếp tục giới hạn chủ sở hữu.
+      schema:
+        type: string
+        pattern: ^eq\.[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+        example: eq.550e8400-e29b-41d4-a716-446655440000
+    PreferRepresentation:
+      name: Prefer
+      in: header
+      required: true
+      description: Quy ước bàn giao yêu cầu trả các dòng đã ghi để app xác nhận kết quả. SDK dùng .select() sau
+        thao tác ghi.
+      schema:
+        type: string
+        const: return=representation
+  schemas:
+    PasswordGrant:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+      additionalProperties: false
+    RefreshGrant:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          writeOnly: true
+      required:
+      - refresh_token
+      additionalProperties: false
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type:
+          - string
+          - 'null'
+        role:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      additionalProperties: true
+    AuthSession:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+        expires_at:
+          type: integer
+          description: Unix timestamp theo giây. Có trong mẫu cung cấp, app nên hỗ trợ khi trường này vắng mặt trong
+            HTTP response.
+        refresh_token:
+          type: string
+        user:
+          $ref: '#/components/schemas/AuthUser'
+      required:
+      - access_token
+      - token_type
+      - expires_in
+      - refresh_token
+      - user
+      additionalProperties: true
+    AuthError:
+      type: object
+      properties:
+        code:
+          type:
+          - integer
+          - string
+        error_code:
+          type: string
+        msg:
+          type: string
+        message:
+          type: string
+      additionalProperties: true
+    DataError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type:
+          - string
+          - 'null'
+        hint:
+          type:
+          - string
+          - 'null'
+      required:
+      - code
+      - message
+      additionalProperties: true
+    ProfileSummary:
+      type: object
+      required:
+      - user_id
+      - display_name
+      - time_zone
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type:
+          - string
+          - 'null'
+        time_zone:
+          type: string
+          example: Asia/Ho_Chi_Minh
+      additionalProperties: false
+    Profile:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type:
+          - string
+          - 'null'
+        avatar_url:
+          type:
+          - string
+          - 'null'
+        birth_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        time_zone:
+          type: string
+          description: Tên múi giờ IANA. App kiểm tra hợp lệ, cột text hiện chưa có CHECK cho IANA.
+          example: Asia/Ho_Chi_Minh
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - user_id
+      - display_name
+      - avatar_url
+      - birth_date
+      - time_zone
+      - created_at
+      - updated_at
+    UpdateProfile:
+      type: object
+      properties:
+        display_name:
+          type:
+          - string
+          - 'null'
+        avatar_url:
+          type:
+          - string
+          - 'null'
+        birth_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        time_zone:
+          type: string
+          description: Tên múi giờ IANA. App kiểm tra hợp lệ, cột text hiện chưa có CHECK cho IANA.
+          example: Asia/Ho_Chi_Minh
+      minProperties: 1
+      additionalProperties: false
+    Goal:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        daily_target_minutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - user_id
+      - daily_target_minutes
+      - created_at
+      - updated_at
+    SaveGoal:
+      type: object
+      properties:
+        daily_target_minutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+      required:
+      - daily_target_minutes
+      additionalProperties: false
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        occurred_at:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+          format: uuid
+        note:
+          type:
+          - string
+          - 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - user_id
+      - duration_minutes
+      - occurred_at
+      - request_id
+      - note
+      - created_at
+      - updated_at
+    CreateActivity:
+      type: object
+      properties:
+        duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        occurred_at:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+          format: uuid
+        note:
+          type:
+          - string
+          - 'null'
+      required:
+      - duration_minutes
+      - occurred_at
+      - request_id
+      additionalProperties: false
+    ReminderSchedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        local_time:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{1,6})?$
+          example: 09:00:00
+          description: Giờ địa phương theo profiles.time_zone. App gửi HH:mm:ss, có thể có phần giây lẻ.
+        days_of_week:
+          type: array
+          minItems: 1
+          maxItems: 7
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
+          description: Mảng một chiều. 1 là thứ Hai, 7 là Chủ nhật. Không nhận phần tử null.
+        enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - user_id
+      - local_time
+      - days_of_week
+      - enabled
+      - created_at
+      - updated_at
+    CreateReminderSchedule:
+      type: object
+      properties:
+        local_time:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{1,6})?$
+          example: 09:00:00
+          description: Giờ địa phương theo profiles.time_zone. App gửi HH:mm:ss, có thể có phần giây lẻ.
+        days_of_week:
+          type: array
+          minItems: 1
+          maxItems: 7
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
+          description: Mảng một chiều. 1 là thứ Hai, 7 là Chủ nhật. Không nhận phần tử null.
+          default:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+        enabled:
+          type: boolean
+          default: true
+      required:
+      - local_time
+      additionalProperties: false
+    UpdateReminderSchedule:
+      type: object
+      properties:
+        local_time:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{1,6})?$
+          example: 09:00:00
+          description: Giờ địa phương theo profiles.time_zone. App gửi HH:mm:ss, có thể có phần giây lẻ.
+        days_of_week:
+          type: array
+          minItems: 1
+          maxItems: 7
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
+          description: Mảng một chiều. 1 là thứ Hai, 7 là Chủ nhật. Không nhận phần tử null.
+        enabled:
+          type: boolean
+      minProperties: 1
+      additionalProperties: false
+  responses:
+    InvalidData:
+      description: JSON, kiểu dữ liệu, CHECK, NOT NULL hoặc cú pháp bộ lọc không hợp lệ. Mã thường gặp 23514, 23502,
+        22P02, PGRST100.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataError'
+    InvalidJwt:
+      description: JWT không hợp lệ hoặc hết hạn, hoặc request chưa có phiên hợp lệ. Gateway có thể trả cấu trúc
+        khác.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataError'
+          examples:
+            example:
+              value:
+                code: PGRST301
+                message: JWT expired
+                details: null
+                hint: null
+    Forbidden:
+      description: Thiếu quyền thao tác theo bảng/cột hoặc vi phạm RLS WITH CHECK. SELECT bị RLS lọc dòng thường
+        trả 200 với [].
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataError'
+          examples:
+            example:
+              value:
+                code: '42501'
+                message: permission denied
+                details: null
+                hint: null
+    Conflict:
+      description: Vi phạm UNIQUE 23505 hoặc khóa ngoại 23503. Kiểm tra tên ràng buộc trước khi xử lý yêu cầu lặp.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataError'
+    AuthFailure:
+      description: Thông tin đăng nhập hoặc refresh token bị từ chối. Dùng error_code để xử lý. Đối chiếu status
+        thực tế trên project.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthError'
+          examples:
+            example:
+              value:
+                code: 400
+                error_code: invalid_credentials
+                msg: Invalid login credentials
+    AuthJwtFailure:
+      description: Phiên hoặc JWT không hợp lệ.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthError'
