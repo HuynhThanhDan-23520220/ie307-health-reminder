@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import App from '../App';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LayoutProvider } from '../src/theme';
+import { AppNavigator } from '../src/app/AppNavigator';
 import { enableScreens } from 'react-native-screens';
 
 // Native screen transitions do not run in Jest; exercise the JS navigation stack.
@@ -19,9 +21,10 @@ beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
 
 test('mở trang chủ và chuyển dữ liệu từ thao tác nhanh sang nhật ký', async () => {
-  await render(<App />);
+  // Exercise the navigation independently while App hosts the TV2 auth test screen.
+  await render(<SafeAreaProvider><LayoutProvider><AppNavigator /></LayoutProvider></SafeAreaProvider>);
 
-  expect(await screen.findByText('Hello fen')).toBeOnTheScreen();
+  expect(await screen.findByText('BreakFlow • Vận động & Tập trung')).toBeOnTheScreen();
   await fireEvent.press(screen.getByText('Vươn vai 5p'));
   await act(() => jest.advanceTimersByTimeAsync(1000));
 
