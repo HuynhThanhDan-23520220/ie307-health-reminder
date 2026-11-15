@@ -6,7 +6,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { activitySchema, ActivityInput } from "../activitySchema";
-import { colors } from "../theme";
+import { colors, brutalCard } from "../theme";
 import { formatDateTime } from "../../../utils/format";
 
 const DURATION_CHIPS = [10, 15, 30];
@@ -269,9 +269,7 @@ export default function ActivityForm({ initial, submitLabel, onSubmit, onCancel 
   );
 }
 
-const card = {
-  backgroundColor: colors.card, borderRadius: 16, padding: 16, gap: 12,
-  borderWidth: 1, borderColor: colors.border,
-} as const;
+const card = { ...brutalCard, gap: 12 } as const;
+
 const label = { fontSize: 18, fontWeight: "600", color: colors.text } as const;
 const errorText = { color: colors.danger, fontSize: 16 } as const;

@@ -3,16 +3,23 @@ import { activityRepo } from "../activityRepo";
 import { newRequestId } from "../../../utils/requestId";
 import ActivityForm from "../components/ActivityForm";
 
-export default function AddActivityScreen({ onDone }: { onDone?: () => void }) {
+type Props = {
+  prefillMinutes?: number;
+  onDone?: (savedMinutes: number) => void;
+};
+
+export default function AddActivityScreen({ prefillMinutes, onDone }: Props) {
   const requestId = useRef(newRequestId());
 
   return (
     <ActivityForm
+      key={prefillMinutes ?? "default"}
+      initial={prefillMinutes ? { durationMinutes: prefillMinutes } : undefined}
       submitLabel="Lưu vận động"
       onSubmit={async (values) => {
         await activityRepo.create(values, requestId.current);
-        requestId.current = newRequestId(); // chỉ đổi mã khi đã lưu thành công
-        onDone?.();
+        requestId.current = newRequestId();
+        onDone?.(values.durationMinutes);
       }}
     />
   );

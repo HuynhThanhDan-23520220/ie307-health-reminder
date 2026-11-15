@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator, Alert } from "react-native";
 import { activityRepo, Activity } from "../activityRepo";
-import { colors } from "../theme";
+import { colors, brutalCard } from "../theme";
 import { formatTime, formatMinutes } from "../../../utils/format";
 
 export default function ActivityListScreen({ onEdit }: { onEdit?: (a: Activity) => void }) {
@@ -55,24 +55,28 @@ export default function ActivityListScreen({ onEdit }: { onEdit?: (a: Activity) 
       onRefresh={() => load(true)}
       refreshing={refreshing}
       ListHeaderComponent={
-        <View style={{ gap: 12 }}>
-          <View style={{ backgroundColor: colors.primary, borderRadius: 16, padding: 20 }}>
-            <Text style={{ color: colors.primaryText, fontSize: 16 }}>Hôm nay bạn đã vận động</Text>
-            <Text style={{ color: colors.primaryText, fontSize: 32, fontWeight: "700" }}>
-              {formatMinutes(total)}
-            </Text>
-            <Text style={{ color: colors.primaryText, fontSize: 16 }}>{items.length} lần ghi</Text>
-          </View>
-          {error && (
-            <View style={{ backgroundColor: colors.errorBg, padding: 12, borderRadius: 12, gap: 8 }}>
-              <Text style={{ color: colors.danger, fontSize: 16 }}>{error}</Text>
-              <Pressable onPress={() => load()} style={{ minHeight: 44, justifyContent: "center" }}>
-                <Text style={{ color: colors.primary, fontSize: 18, fontWeight: "600" }}>Thử lại</Text>
-              </Pressable>
-            </View>
-          )}
+      <View style={{ gap: 12 }}>
+        <View style={{ ...brutalCard, backgroundColor: colors.accent, padding: 20 }}>
+          <Text style={{ color: colors.text, fontSize: 14, fontWeight: "700", letterSpacing: 1 }}>
+            HÔM NAY BẠN ĐÃ VẬN ĐỘNG
+          </Text>
+          <Text style={{ color: colors.text, fontSize: 36, fontWeight: "800" }}>
+            {formatMinutes(total)}
+          </Text>
+          <Text style={{ color: colors.text, fontSize: 16, fontWeight: "600" }}>
+            {items.length} lần ghi
+          </Text>
         </View>
-      }
+        {error && (
+          <View style={{ ...brutalCard, backgroundColor: colors.errorBg, gap: 8 }}>
+            <Text style={{ color: colors.danger, fontSize: 16, fontWeight: "600" }}>{error}</Text>
+            <Pressable onPress={() => load()} style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ color: colors.primary, fontSize: 18, fontWeight: "700" }}>Thử lại</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    }
       ListEmptyComponent={
         !error ? (
             <Text style={{ fontSize: 18, color: colors.sub, textAlign: "center", padding: 24 }}>
@@ -81,30 +85,33 @@ export default function ActivityListScreen({ onEdit }: { onEdit?: (a: Activity) 
         ) : undefined
         }
       renderItem={({ item }) => (
+      <Pressable
+        onPress={() => onEdit?.(item)}
+        accessibilityRole="button"
+        accessibilityHint="Bấm để sửa"
+        style={{ ...brutalCard, flexDirection: "row", alignItems: "center", gap: 12 }}
+      >
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={{ fontSize: 26, fontWeight: "800", color: colors.text }}>
+            {item.durationMinutes} phút
+          </Text>
+          <Text style={{ fontSize: 16, color: colors.sub }}>Lúc {formatTime(item.occurredAt)}</Text>
+          {item.note ? <Text style={{ fontSize: 16, color: colors.text }}>{item.note}</Text> : null}
+        </View>
         <Pressable
-          onPress={() => onEdit?.(item)}
+          onPress={() => confirmRemove(item)}
           accessibilityRole="button"
-          accessibilityHint="Bấm để sửa"
+          accessibilityLabel="Xóa bản ghi"
           style={{
-            backgroundColor: colors.card, borderRadius: 16, padding: 16,
-            borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 12,
+            minHeight: 48, minWidth: 64, alignItems: "center", justifyContent: "center",
+            borderWidth: 2, borderColor: colors.danger, borderRadius: 14,
+            paddingHorizontal: 12,
           }}
         >
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ fontSize: 22, fontWeight: "700", color: colors.text }}>{item.durationMinutes} phút</Text>
-            <Text style={{ fontSize: 16, color: colors.sub }}>Lúc {formatTime(item.occurredAt)}</Text>
-            {item.note ? <Text style={{ fontSize: 16, color: colors.text }}>{item.note}</Text> : null}
-          </View>
-          <Pressable
-            onPress={() => confirmRemove(item)}
-            accessibilityRole="button"
-            accessibilityLabel="Xóa bản ghi"
-            style={{ minHeight: 48, minWidth: 64, alignItems: "center", justifyContent: "center" }}
-          >
-            <Text style={{ color: colors.danger, fontSize: 16, fontWeight: "600" }}>Xóa</Text>
-          </Pressable>
+          <Text style={{ color: colors.danger, fontSize: 16, fontWeight: "700" }}>Xóa</Text>
         </Pressable>
-      )}
+      </Pressable>
+    )}
     />
   );
 }

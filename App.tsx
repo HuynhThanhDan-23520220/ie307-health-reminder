@@ -3,22 +3,24 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LayoutProvider } from './src/theme';
 import { AuthProvider } from './src/features/auth/providers/AuthProvider';
+import { useAuth } from './src/features/auth/hooks/useAuth';
 import { AuthTestScreen } from './src/features/auth/screens/AuthTestScreen';
-import ActivityDevScreen from './src/features/activity-log/screens/ActivityDevScreen';
+import { AppNavigator } from './src/app/AppNavigator';
 
-/**
- * Entry Point ứng dụng - Khởi tạo bởi TV1 (Bùi Công Danh)
- * thành viên 2 kiểm thử
- * Tạm hiển thị AuthTestScreen để kiểm thử Supabase trước khi tích hợp AppNavigator.
- */
+function Root() {
+  const { session, isInitializing } = useAuth();
+  if (isInitializing) return null;
+  if (!session) return <AuthTestScreen />;
+  return <AppNavigator />;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <LayoutProvider>
         <AuthProvider>
           <StatusBar style="dark" />
-          {/* thành viên 2 kiểm thử */}
-          <ActivityDevScreen />
+          <Root />
         </AuthProvider>
       </LayoutProvider>
     </SafeAreaProvider>
