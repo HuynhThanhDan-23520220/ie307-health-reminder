@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: IE307 Seminar Supabase API
-  version: 0.2.0
+  version: 0.3.0
   description: Hợp đồng bàn giao cơ bản cho Supabase Auth email/mật khẩu và bốn bảng. Các schema dữ liệu dựa trên
     note/baocao.md mục 7. Quy ước app có thể hẹp hơn khả năng Data API. RLS lấy người dùng từ JWT. Tình trạng kiểm
     thử và quyết định tạm thời xem INTEGRATION.md. Ví dụ dùng dữ liệu giả.
@@ -22,7 +22,75 @@ x-verification:
   provided-evidence: PostmanResult/refresh-token.json contains a session response only; request and HTTP status
     unavailable
   live-api-tested-by-author: false
+  user-reported-postman:
+    date: '2026-11-15'
+    operations:
+    - createActivity
+    - updateActivity
+    - deleteActivity
+    status: passed-as-reported-by-user
+    note: Người dùng xác nhận đã cập nhật cloud và kiểm thử Postman đúng. Chưa đính kèm response/raw export cho
+      lần kiểm thử này. Các ví dụ bên dưới là dữ liệu giả.
 paths:
+  /auth/v1/signup:
+    post:
+      operationId: signUp
+      tags:
+      - Auth
+      summary: Đăng ký email và mật khẩu
+      description: Confirm email bật thì HTTP trả user và SDK có data.session=null. Tắt thì HTTP trả cặp token cùng
+        user và SDK có session. Không mặc định HTTP 200 chứng minh email mới được tạo vì Supabase có thể che tài
+        khoản đã tồn tại tùy cấu hình. profiles được sinh bởi trigger tạo tài khoản trên database. requiresEmailConfirmation
+        là kết quả rút gọn của service app, không phải trường của HTTP response.
+      security:
+      - SupabaseApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+            examples:
+              signup:
+                value:
+                  email: demo@example.com
+                  password: EXAMPLE_PASSWORD
+      responses:
+        '200':
+          description: User đang chờ xác nhận hoặc phiên mới theo cấu hình project. Ví dụ dùng dữ liệu giả.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/AuthSession'
+                - $ref: '#/components/schemas/AuthUser'
+              examples:
+                confirmationRequired:
+                  value:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    email: demo@example.com
+                sessionCreated:
+                  value:
+                    access_token: EXAMPLE_ACCESS_TOKEN
+                    token_type: bearer
+                    expires_in: 3600
+                    refresh_token: EXAMPLE_REFRESH_TOKEN
+                    user:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      email: demo@example.com
+        '400':
+          $ref: '#/components/responses/AuthFailure'
+        '401':
+          $ref: '#/components/responses/AuthJwtFailure'
+        '403':
+          $ref: '#/components/responses/AuthFailure'
+        '422':
+          $ref: '#/components/responses/AuthFailure'
+        '429':
+          description: Vượt giới hạn request hoặc gửi email. Chờ trước khi gửi lại.
+        default:
+          description: Lỗi gateway hoặc dịch vụ Auth, bao gồm lỗi trigger tạo hồ sơ. Kiểm tra Content-Type và log
+            server.
   /auth/v1/token:
     post:
       operationId: issueSession
@@ -126,12 +194,13 @@ paths:
       - name: select
         in: query
         required: false
-        description: Hỗ trợ cả phép chiếu ba cột đã dùng trong Postman và lấy đầy đủ cột.
+        description: Lấy đầy đủ cột hoặc phép chiếu ba/bốn cột đang dùng trong Postman và màn hình thử Auth.
         schema:
           type: string
           enum:
           - '*'
           - user_id,display_name,time_zone
+          - user_id,display_name,time_zone,created_at
           default: '*'
       - $ref: '#/components/parameters/OwnerFilter'
       responses:
@@ -146,6 +215,7 @@ paths:
                   oneOf:
                   - $ref: '#/components/schemas/Profile'
                   - $ref: '#/components/schemas/ProfileSummary'
+                  - $ref: '#/components/schemas/ProfileTestView'
               examples:
                 summary:
                   value:
@@ -154,6 +224,12 @@ paths:
                     time_zone: Asia/Ho_Chi_Minh
                 noVisibleRows:
                   value: []
+                authTestProjection:
+                  value:
+                  - user_id: 550e8400-e29b-41d4-a716-446655440000
+                    display_name: null
+                    time_zone: Asia/Ho_Chi_Minh
+                    created_at: '2026-11-15T02:00:00+00:00'
         '400':
           $ref: '#/components/responses/InvalidData'
         '401':
@@ -348,14 +424,16 @@ paths:
       - $ref: '#/components/parameters/PreferRepresentation'
       responses:
         '201':
-          description: Các dòng được phép đọc hoặc đã thao tác. [] nghĩa là không có dòng phù hợp và được phép truy
-            cập.
+          description: 'Một dòng hoạt động mới khi gửi một object và Prefer: return=representation. user_id trong
+            response là UID của phiên đã xác thực.'
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Activity'
+                minItems: 1
+                maxItems: 1
         '400':
           $ref: '#/components/responses/InvalidData'
         '401':
@@ -379,10 +457,136 @@ paths:
                   occurred_at: '2026-11-11T09:35:00+07:00'
                   request_id: 31e40d57-7462-41e8-8e95-4a993e13b2af
                   note: Đi bộ
-      description: Sinh request_id trước lần gửi đầu. Retry giữ nguyên request_id và payload. UNIQUE(user_id, request_id)
-        chặn bản ghi thứ hai bằng 409/23505. Đọc lại theo request_id, so sánh số phút, thời điểm quy về cùng instant
-        và note (bỏ trống được quy về null). Cùng nội dung dùng lại bản ghi; khác nội dung báo xung đột ở app. Máy
-        chủ không tự trả lại bản ghi cũ.
+      description: Database tự điền user_id bằng auth.uid() từ JWT. App chỉ gửi duration_minutes, occurred_at, request_id
+        và note nếu có; gửi cột bị hạn chế như user_id có thể bị từ chối với 42501. Sinh request_id trước lần gửi
+        đầu. Retry giữ nguyên request_id và payload. UNIQUE(user_id, request_id) chặn bản ghi thứ hai bằng 409/23505.
+        Đọc lại theo request_id, so sánh số phút, thời điểm quy về cùng instant và note (bỏ trống được quy về null).
+        Cùng nội dung dùng lại bản ghi; khác nội dung báo xung đột ở app. Máy chủ không tự trả lại bản ghi cũ.
+    patch:
+      operationId: updateActivity
+      tags:
+      - Activities
+      summary: Sửa hoạt động của mình
+      parameters:
+      - $ref: '#/components/parameters/ActivityIdRequired'
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '200':
+          description: Một dòng đã cập nhật.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 1
+                items:
+                  $ref: '#/components/schemas/Activity'
+              examples:
+                affected:
+                  value:
+                  - id: 6e4fb0ce-393f-4295-9c76-1eceb402462f
+                    user_id: 550e8400-e29b-41d4-a716-446655440000
+                    duration_minutes: 15
+                    occurred_at: '2026-11-15T09:35:00+07:00'
+                    request_id: 31e40d57-7462-41e8-8e95-4a993e13b2af
+                    note: Đã cập nhật bằng Postman
+                    created_at: '2026-11-15T02:40:00+00:00'
+                    updated_at: '2026-11-15T02:45:00+00:00'
+                noVisibleRows:
+                  summary: Không có dòng phù hợp hoặc bị RLS lọc, gồm nhắm ID tài khoản khác.
+                  value: []
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          description: Thiếu quyền thao tác theo bảng/cột hoặc vi phạm WITH CHECK. RLS lọc dòng hiện có thường dẫn
+            tới 200 với []. Ví dụ lỗi chỉ có tính minh họa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataError'
+              examples:
+                forbidden:
+                  value:
+                    code: '42501'
+                    message: permission denied for table activities
+                    details: null
+                    hint: null
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc máy chủ. Kiểm tra Content-Type và xử lý lỗi mạng.
+      description: Chỉ sửa duration_minutes, occurred_at và note. JWT xác định chủ sở hữu. Trigger tự cập nhật updated_at,
+        app không gửi trường này. [] nghĩa là không có dòng được cập nhật; tải lại và báo bản ghi không còn khả
+        dụng. Chưa có kiểm tra phiên bản chống ghi đè đồng thời. Sau thành công tải lại nhật ký/tổng phút, gồm ngày
+        cũ và mới nếu đổi occurred_at.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateActivity'
+            examples:
+              edit:
+                value:
+                  duration_minutes: 15
+                  note: Đã cập nhật bằng Postman
+              clearNote:
+                value:
+                  note: null
+    delete:
+      operationId: deleteActivity
+      tags:
+      - Activities
+      summary: Xóa hẳn hoạt động của mình
+      parameters:
+      - $ref: '#/components/parameters/ActivityIdRequired'
+      - $ref: '#/components/parameters/PreferRepresentation'
+      responses:
+        '200':
+          description: Một dòng đã xóa hẳn; không có chức năng khôi phục trong hợp đồng này.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 1
+                items:
+                  $ref: '#/components/schemas/Activity'
+              examples:
+                affected:
+                  value:
+                  - id: 6e4fb0ce-393f-4295-9c76-1eceb402462f
+                    user_id: 550e8400-e29b-41d4-a716-446655440000
+                    duration_minutes: 15
+                    occurred_at: '2026-11-15T09:35:00+07:00'
+                    request_id: 31e40d57-7462-41e8-8e95-4a993e13b2af
+                    note: Đã cập nhật bằng Postman
+                    created_at: '2026-11-15T02:40:00+00:00'
+                    updated_at: '2026-11-15T02:45:00+00:00'
+                noVisibleRows:
+                  summary: Không có dòng phù hợp hoặc bị RLS lọc, gồm nhắm ID tài khoản khác.
+                  value: []
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '401':
+          $ref: '#/components/responses/InvalidJwt'
+        '403':
+          description: Thiếu quyền thao tác theo bảng/cột hoặc vi phạm WITH CHECK. RLS lọc dòng hiện có thường dẫn
+            tới 200 với []. Ví dụ lỗi chỉ có tính minh họa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataError'
+              examples:
+                forbidden:
+                  value:
+                    code: '42501'
+                    message: permission denied for table activities
+                    details: null
+                    hint: null
+        default:
+          description: Lỗi gateway, giới hạn dịch vụ hoặc máy chủ. Kiểm tra Content-Type và xử lý lỗi mạng.
+      description: Cần xác nhận người dùng trước khi xóa. Không gửi JSON body. JWT và policy giới hạn hoạt động
+        thuộc mình. [] nghĩa là không có dòng bị xóa, có thể do đã xóa trước đó hoặc không có quyền xem dòng. Không
+        khẳng định đã xóa một dòng khi nhận []. Sau thao tác tải lại nhật ký/tổng phút; không trừ phút lặp khi retry.
   /rest/v1/reminder_schedules:
     get:
       operationId: listReminderSchedules
@@ -582,6 +786,16 @@ components:
       schema:
         type: string
         const: return=representation
+    ActivityIdRequired:
+      name: id
+      in: query
+      required: true
+      description: ID hoạt động cần sửa hoặc xóa, theo cú pháp eq.<uuid>. App luôn truyền ID hợp lệ. RLS kiểm tra
+        chủ sở hữu từ JWT. Data API không tự bắt buộc bộ lọc này theo YAML.
+      schema:
+        type: string
+        pattern: ^eq\.[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+        example: eq.550e8400-e29b-41d4-a716-446655440000
   schemas:
     PasswordGrant:
       type: object
@@ -852,6 +1066,8 @@ components:
       - occurred_at
       - request_id
       additionalProperties: false
+      description: Chỉ gửi các trường nhập liệu. Bỏ user_id, id, created_at, updated_at. Database điền user_id bằng
+        auth.uid() từ JWT. Giới hạn lưu trữ 1–1440 phút; giao diện có thể áp giới hạn thấp hơn.
     ReminderSchedule:
       type: object
       properties:
@@ -946,6 +1162,61 @@ components:
           type: boolean
       minProperties: 1
       additionalProperties: false
+    UpdateActivity:
+      type: object
+      description: Gửi ít nhất một trường cần sửa. Giữ nguyên id, user_id, request_id, created_at. Trigger set_activities_updated_at
+        tự gán updated_at. Giới hạn lưu trữ 1–1440 phút.
+      properties:
+        duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+        occurred_at:
+          type: string
+          format: date-time
+        note:
+          type:
+          - string
+          - 'null'
+      minProperties: 1
+      additionalProperties: false
+    ProfileTestView:
+      type: object
+      required:
+      - user_id
+      - display_name
+      - time_zone
+      - created_at
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type:
+          - string
+          - 'null'
+        time_zone:
+          type: string
+          example: Asia/Ho_Chi_Minh
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+    SignUpRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+      additionalProperties: false
+      description: Email và mật khẩu. Mật khẩu nhập lại được kiểm tra trên form và không gửi. Chính sách mật khẩu
+        do Supabase project thực thi.
   responses:
     InvalidData:
       description: JSON, kiểu dữ liệu, CHECK, NOT NULL hoặc cú pháp bộ lọc không hợp lệ. Mã thường gặp 23514, 23502,
