@@ -36,9 +36,7 @@ export const activityRepo = {
 
   // requestId giữ nguyên khi thử lại để không bị lưu trùng
   async create(input: ActivityInput, requestId: string): Promise<void> {
-    const userId = await currentUserId();
     const { error } = await supabase.from("activities").insert({
-      user_id: userId,
       request_id: requestId,
       duration_minutes: input.durationMinutes,
       occurred_at: input.occurredAt.toISOString(),
