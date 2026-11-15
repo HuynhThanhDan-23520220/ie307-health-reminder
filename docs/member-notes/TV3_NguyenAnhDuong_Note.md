@@ -23,6 +23,3 @@ Lưu xong -> điều hướng về HomeTab kèm lastLoggedMinutes
 - React Hook Form thay useState (giảm code)
 - Zod làm nguồn xác thực, backend vẫn xác thực lại
 - request_id chống ghi trùng khi thử lại sau lỗi mạng
-
-## 6. Hình minh họa
-(chèn ảnh chụp form, danh sách, lỗi)
