@@ -17,7 +17,7 @@
     "export:check": "expo export --platform all"
   },
   "dependencies": {
-    "@hookform/resolvers": "^7.0.5",
+    "@hookform/resolvers": "^7.0.6",
     "@notifee/react-native": "^9.1.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "12.0.1",
@@ -30,7 +30,7 @@
     "dayjs": "^1.11.13",
     "expo": "~58.0.23",
     "expo-auth-session": "~58.0.0",
-    "expo-crypto": "~58.0.0",
+    "expo-crypto": "~58.0.8",
     "expo-dev-client": "~58.0.18",
     "expo-linking": "~58.0.0",
     "expo-localization": "~58.0.0",
@@ -38,7 +38,7 @@
     "expo-status-bar": "~58.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-hook-form": "^7.91.0",
+    "react-hook-form": "^7.92.0",
     "react-native": "0.88.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",
