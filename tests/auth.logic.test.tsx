@@ -5,6 +5,12 @@ import { AuthProvider } from '../src/features/auth/providers/AuthProvider';
 import { useAuth } from '../src/features/auth/hooks/useAuth';
 import { supabase } from '../src/services/supabase';
 
+jest.mock('expo-linking', () => ({
+  createURL: jest.fn(() => 'breakflow://auth/reset-password'),
+  getInitialURL: jest.fn(async () => null),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
+
 jest.mock('../src/services/supabase', () => ({
   supabase: {
     auth: {
@@ -113,4 +119,13 @@ test('đăng ký cần xác nhận email chưa tạo phiên đăng nhập', asyn
   expect(supabase.auth.signUp).toHaveBeenCalledWith({ email: 'new@example.com', password: 'new-password' });
   expect(auth.session).toBeNull();
   expect(auth.isSigningUp).toBe(false);
+});
+
+test('không cho đổi mật khẩu qua Context nếu chưa vào luồng khôi phục', async () => {
+  await render(<AuthProvider><Probe /></AuthProvider>);
+  await act(() => { emit('SIGNED_IN', session); });
+  await act(async () => {
+    await expect(auth.updatePassword('new-password')).rejects.toMatchObject({ code: 'recovery_required' });
+  });
+  expect(auth.passwordRecovery).toBe('none');
 });

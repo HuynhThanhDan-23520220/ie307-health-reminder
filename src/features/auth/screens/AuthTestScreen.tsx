@@ -47,22 +47,97 @@ function ProfileTest({ userId }: { userId: string }) {
 
 // thành viên 2
 export function AuthTestScreen() {
-  const { user } = useAuth();
+  const { user, passwordRecovery, isHandlingRecoveryLink } = useAuth();
+  if (isHandlingRecoveryLink) {
+    return <ScreenContainer><Text>Đang xác minh liên kết khôi phục…</Text></ScreenContainer>;
+  }
+  if (passwordRecovery !== 'none') return <PasswordRecoveryForm key={user?.id} />;
   // Remount the form on account changes to discard old credentials and query results.
   return <AuthTestForm key={user?.id ?? 'signed-out'} />;
 }
 
+function PasswordRecoveryForm() {
+  const { user, passwordRecovery, isUpdatingPassword, isSigningOut, error, updatePassword, signOut, clearError } = useAuth();
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [message, setMessage] = useState('');
+  const busy = isUpdatingPassword || isSigningOut;
+
+  async function save() {
+    clearError();
+    setMessage('');
+    if (password !== confirmation) {
+      setMessage('Hai mật khẩu không khớp.');
+      return;
+    }
+    try {
+      await updatePassword(password);
+      setPassword('');
+      setConfirmation('');
+    } catch (saveError) {
+      setMessage(toAuthOperationError(saveError).message);
+    }
+  }
+
+  async function leave() {
+    setMessage('');
+    try {
+      await signOut();
+    } catch (logoutError) {
+      setMessage(toAuthOperationError(logoutError).message);
+    }
+  }
+
+  return (
+    <ScreenContainer>
+      <View style={styles.section}>
+        <Text>Đặt lại mật khẩu</Text>
+        <Text>Email: {user?.email}</Text>
+        {passwordRecovery === 'complete' ? (
+          <Text>Đã đổi mật khẩu thành công. Hãy quay lại đăng nhập bằng mật khẩu mới.</Text>
+        ) : (
+          <>
+            <TextInput accessibilityLabel="Mật khẩu mới" placeholder="Mật khẩu mới" secureTextEntry
+              autoCapitalize="none" autoCorrect={false} autoComplete="new-password"
+              value={password} onChangeText={setPassword} editable={!busy} style={styles.input} />
+            <TextInput accessibilityLabel="Nhập lại mật khẩu mới" placeholder="Nhập lại mật khẩu mới" secureTextEntry
+              autoCapitalize="none" autoCorrect={false} autoComplete="new-password"
+              value={confirmation} onChangeText={setConfirmation} editable={!busy} style={styles.input} />
+            <Button title="Lưu mật khẩu mới" disabled={busy} onPress={() => { void save(); }} />
+          </>
+        )}
+        <Button title={passwordRecovery === 'complete' ? 'Quay lại đăng nhập' : 'Hủy và đăng xuất'} disabled={busy}
+          onPress={() => { void leave(); }} />
+        {busy && <Text>Đang gửi yêu cầu…</Text>}
+        <Text accessibilityLiveRegion="polite">{message || error?.message || ''}</Text>
+      </View>
+    </ScreenContainer>
+  );
+}
+
 function AuthTestForm() {
-  const { user, isInitializing, isSigningIn, isSigningUp, isSigningOut, error, signIn, signUp, signOut } = useAuth();
+  const { user, isInitializing, isSigningIn, isSigningUp, isSigningOut, isSendingPasswordReset,
+    error, signIn, signUp, signOut, requestPasswordReset, clearError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [message, setMessage] = useState('');
-  const busy = isInitializing || isSigningIn || isSigningUp || isSigningOut;
+  const busy = isInitializing || isSigningIn || isSigningUp || isSigningOut || isSendingPasswordReset;
 
   async function submit() {
     setMessage('');
+    clearError();
+    if (isForgotPassword) {
+      try {
+        await requestPasswordReset(email);
+        setMessage('Nếu email này có tài khoản, bạn sẽ nhận được liên kết đặt lại mật khẩu. Hãy kiểm tra cả thư rác và mở liên kết trên cùng thiết bị hoặc trình duyệt này.');
+      } catch (resetError) {
+        setMessage(toAuthOperationError(resetError).message);
+      }
+      return;
+    }
     if (isRegistering && password !== confirmPassword) {
       setMessage('Hai mật khẩu không khớp.');
       return;
@@ -96,7 +171,7 @@ function AuthTestForm() {
     <ScreenContainer>
       <View style={styles.section}>
         <Text>thành viên 2 kiểm thử</Text>
-        <Text>{user ? 'Đã có phiên đăng nhập' : isRegistering ? 'Đăng ký' : 'Đăng nhập'}</Text>
+        <Text>{user ? 'Đã có phiên đăng nhập' : isForgotPassword ? 'Khôi phục mật khẩu' : isRegistering ? 'Đăng ký' : 'Đăng nhập'}</Text>
         {isInitializing && <Text>Đang kiểm tra phiên…</Text>}
         {user ? (
           <>
@@ -118,7 +193,7 @@ function AuthTestForm() {
               editable={!busy}
               style={styles.input}
             />
-            <TextInput
+            {!isForgotPassword && <TextInput
               accessibilityLabel="Mật khẩu"
               placeholder="Mật khẩu"
               value={password}
@@ -128,7 +203,7 @@ function AuthTestForm() {
               autoCorrect={false}
               editable={!busy}
               style={styles.input}
-            />
+            />}
             {isRegistering && (
               <TextInput
                 accessibilityLabel="Nhập lại mật khẩu"
@@ -142,16 +217,25 @@ function AuthTestForm() {
                 style={styles.input}
               />
             )}
-            <Button title={isRegistering ? 'Đăng ký' : 'Đăng nhập'} disabled={busy} onPress={() => { void submit(); }} />
-            <Button title={isRegistering ? 'Quay lại đăng nhập' : 'Tạo tài khoản'} disabled={busy} onPress={() => {
-              setIsRegistering(!isRegistering);
+            <Button title={isForgotPassword ? 'Gửi email đặt lại mật khẩu' : isRegistering ? 'Đăng ký' : 'Đăng nhập'} disabled={busy} onPress={() => { void submit(); }} />
+            {!isRegistering && !isForgotPassword && <Button title="Quên mật khẩu?" disabled={busy} onPress={() => {
+              setIsForgotPassword(true);
+              clearError();
+              setMessage('');
+              setPassword('');
+              setConfirmPassword('');
+            }} />}
+            <Button title={isRegistering || isForgotPassword ? 'Quay lại đăng nhập' : 'Tạo tài khoản'} disabled={busy} onPress={() => {
+              setIsRegistering(isForgotPassword ? false : !isRegistering);
+              setIsForgotPassword(false);
+              clearError();
               setMessage('');
               setPassword('');
               setConfirmPassword('');
             }} />
           </>
         )}
-        {(isSigningIn || isSigningUp || isSigningOut) && <Text>Đang gửi yêu cầu…</Text>}
+        {(isSigningIn || isSigningUp || isSigningOut || isSendingPasswordReset) && <Text>Đang gửi yêu cầu…</Text>}
         <Text accessibilityLiveRegion="polite">{message || error?.message || ''}</Text>
       </View>
     </ScreenContainer>

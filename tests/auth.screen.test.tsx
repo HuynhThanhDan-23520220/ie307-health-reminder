@@ -2,6 +2,12 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import App from '../App';
 import { supabase } from '../src/services/supabase';
 
+jest.mock('expo-linking', () => ({
+  createURL: jest.fn(() => 'breakflow://auth/reset-password'),
+  getInitialURL: jest.fn(async () => null),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
+
 jest.mock('../src/services/supabase', () => ({
   supabase: {
     from: jest.fn(),
