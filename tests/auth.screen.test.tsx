@@ -63,7 +63,7 @@ test('form đăng ký chặn mật khẩu khác nhau và hiển thị yêu cầu
   expect(screen.queryByText('Đã có phiên đăng nhập')).toBeNull();
 });
 
-test('đọc hồ sơ cloud theo UID của phiên và xóa kết quả khi đăng xuất', async () => {
+test('mở tab Tài khoản, đọc hồ sơ theo UID và về form đăng nhập khi đăng xuất', async () => {
   const user = { id: 'profile-test-user', email: 'test@example.com', aud: 'authenticated', created_at: '', app_metadata: {}, user_metadata: {} };
   jest.mocked(supabase.auth.getSession).mockResolvedValue({
     data: { session: { access_token: 'test-access', refresh_token: 'test-refresh', token_type: 'bearer', expires_in: 3600, user } }, error: null,
@@ -77,11 +77,13 @@ test('đọc hồ sơ cloud theo UID của phiên và xóa kết quả khi đăn
   });
 
   await render(<App />);
-  await fireEvent.press(screen.getByRole('button', { name: 'Đọc hồ sơ' }));
+  await fireEvent.press(await screen.findByRole('button', { name: /^Tài khoản, tab/ }));
+  await fireEvent.press(await screen.findByRole('button', { name: 'Đọc hồ sơ' }));
   expect(supabase.from).toHaveBeenCalledWith('profiles');
   expect(eq).toHaveBeenCalledWith('user_id', user.id);
   expect(await screen.findByText(/Hồ sơ thử/)).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Đăng xuất' }));
+  expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
   expect(screen.queryByText(/Hồ sơ thử/)).toBeNull();
   expect(screen.getByLabelText('Email')).toBeOnTheScreen();
 });

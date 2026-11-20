@@ -9,6 +9,7 @@ import {
   ScreenContainer,
 } from '../components';
 import { HomeScreen } from '../features/dashboard/screens/HomeScreen';
+import { AuthTestScreen } from '../features/auth/screens/AuthTestScreen';
 import { COLORS, SPACING, useAppTheme } from '../theme';
 import { appLinkingConfig } from './linking';
 import { MainTabParamList, MainTabScreenProps } from './navigation.types';
@@ -110,21 +111,6 @@ const TV4RemindersSlotScreen: React.FC<MainTabScreenProps<'RemindersTab'>> = ({
   );
 };
 
-const TV2ProfileAuthSlotScreen: React.FC<MainTabScreenProps<'ProfileAuthTab'>> = () => {
-  return (
-    <ScreenContainer>
-      <AppCard>
-        <AppText variant="title" weight="bold" color={COLORS.primaryDark}>
-          🔐 Màn hình Tài khoản & Phiên đăng nhập
-        </AppText>
-        <AppText variant="bodySmall" color={COLORS.textSecondary} style={styles.slotDesc}>
-          Tính năng đăng nhập và quản lý tài khoản đang được hoàn thiện.
-        </AppText>
-      </AppCard>
-    </ScreenContainer>
-  );
-};
-
 export const AppNavigator: React.FC = () => {
   const { getFontSize } = useAppTheme();
 
@@ -184,7 +170,7 @@ export const AppNavigator: React.FC = () => {
         />
         <Tab.Screen
           name="ProfileAuthTab"
-          component={TV2ProfileAuthSlotScreen}
+          component={AuthTestScreen}
           options={{
             title: 'Tài khoản',
             headerTitle: 'Tài khoản & Phiên',
