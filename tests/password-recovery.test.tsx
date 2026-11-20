@@ -50,6 +50,9 @@ beforeEach(() => {
 
 test('form quên mật khẩu kiểm tra email và chỉ gửi email với redirect đã cấu hình', async () => {
   await render(<App />);
+  // Chờ AuthProvider flush getSession() promise và set isInitializing = false,
+  // nếu không button sẽ còn ở trạng thái disabled và fireEvent.press bị bỏ qua.
+  expect(await screen.findByRole('button', { name: 'Quên mật khẩu?' })).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Quên mật khẩu?' }));
   expect(screen.queryByLabelText('Mật khẩu')).toBeNull();
   await fireEvent.changeText(screen.getByLabelText('Email'), 'invalid');

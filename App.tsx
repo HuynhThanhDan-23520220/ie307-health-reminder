@@ -16,7 +16,7 @@ export default function App() {
       <LayoutProvider>
         <AuthProvider>
           <StatusBar style="dark" />
-          {/* thành viên 2 kiểm thử */}
+          {/* thành viên 5 kiểm thử */}
           <AuthTestScreen />
         </AuthProvider>
       </LayoutProvider>
