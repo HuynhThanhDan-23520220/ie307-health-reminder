@@ -12,6 +12,7 @@ import { HomeScreen } from '../features/dashboard/screens/HomeScreen';
 import { COLORS, SPACING, useAppTheme } from '../theme';
 import { appLinkingConfig } from './linking';
 import { MainTabParamList, MainTabScreenProps } from './navigation.types';
+import ActivityLogScreen from '../features/activity-log/screens/ActivityLogScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -167,7 +168,7 @@ export const AppNavigator: React.FC = () => {
         />
         <Tab.Screen
           name="ActivityLogTab"
-          component={TV3ActivityLogSlotScreen}
+          component={ActivityLogScreen}
           options={{
             title: 'Nhật ký',
             headerTitle: 'Ghi nhận Vận động & Nước uống',
