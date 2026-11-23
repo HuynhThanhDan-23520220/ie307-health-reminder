@@ -9,6 +9,8 @@ import {
   ScreenContainer,
 } from '../components';
 import { HomeScreen } from '../features/dashboard/screens/HomeScreen';
+import { RemindersScreen } from '../features/reminders/screens/RemindersScreen';
+import { useNotificationEvents } from '../features/reminders/hooks/useNotificationEvents';
 import { COLORS, SPACING, useAppTheme } from '../theme';
 import { appLinkingConfig } from './linking';
 import { MainTabParamList, MainTabScreenProps } from './navigation.types';
@@ -68,47 +70,6 @@ const TV3ActivityLogSlotScreen: React.FC<MainTabScreenProps<'ActivityLogTab'>> =
   );
 };
 
-const TV4RemindersSlotScreen: React.FC<MainTabScreenProps<'RemindersTab'>> = ({
-  navigation,
-  route,
-}) => {
-  const openCreateModal = route.params?.openCreateModal ?? false;
-
-  return (
-    <ScreenContainer>
-      <AppCard>
-        <AppText variant="title" weight="bold" color={COLORS.accent}>
-          🔔 Màn hình Lịch nhắc
-        </AppText>
-        <AppText variant="bodySmall" color={COLORS.textSecondary} style={styles.slotDesc}>
-          Bản xem trước lịch nhắc. Tính năng đặt thông báo đang được hoàn thiện.
-        </AppText>
-
-        <View style={styles.paramPreviewBox}>
-          <AppText variant="bodySmall" weight="600" color={COLORS.textPrimary}>
-            Trạng thái lịch nhắc
-          </AppText>
-          <AppText variant="body" color={COLORS.accent}>
-            Tạo lời nhắc: {openCreateModal ? 'true (Mở tạo lịch nhắc)' : 'false'}
-          </AppText>
-        </View>
-
-        <AppButton
-          title="Thử ghi nhận 5 phút vận động"
-          variant="accent"
-          onPress={() =>
-            navigation.navigate('ActivityLogTab', {
-              prefillMinutes: 5,
-              activityType: 'stretch',
-              fromNotificationId: 'notif-demo-01',
-            })
-          }
-        />
-      </AppCard>
-    </ScreenContainer>
-  );
-};
-
 const TV2ProfileAuthSlotScreen: React.FC<MainTabScreenProps<'ProfileAuthTab'>> = () => {
   return (
     <ScreenContainer>
@@ -126,6 +87,7 @@ const TV2ProfileAuthSlotScreen: React.FC<MainTabScreenProps<'ProfileAuthTab'>> =
 
 export const AppNavigator: React.FC = () => {
   const { getFontSize } = useAppTheme();
+  useNotificationEvents(); // [TV4] nghe sự kiện thông báo & mở đúng màn hình
 
   return (
     <NavigationContainer linking={appLinkingConfig}>
@@ -175,7 +137,7 @@ export const AppNavigator: React.FC = () => {
         />
         <Tab.Screen
           name="RemindersTab"
-          component={TV4RemindersSlotScreen}
+          component={RemindersScreen}
           options={{
             title: 'Lịch nhắc',
             headerTitle: 'Lịch nhắc Giữa giờ',

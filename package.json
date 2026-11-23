@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "BreakFlow - Ứng dụng nhắc giải lao, vận động & uống nước cho học sinh, sinh viên và dân văn phòng (IE307.R11 - Chủ đề 14)",
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
