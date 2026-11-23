@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { AppButton, AppCard, AppText, ScreenContainer } from '../../../components';
 import { COLORS, RADIUS, SPACING } from '../../../theme';
@@ -18,6 +18,14 @@ import {
   syncAllSchedules,
 } from '../services/reminder-scheduler';
 
+/** Tải lịch từ server rồi đặt lại thông báo trên máy. Không gọi setState ở đây. */
+async function loadReminders() {
+  const readiness = await ensureNotificationSetup();
+  const list = await listReminders();
+  await syncAllSchedules(list); // server là nguồn sự thật → máy đặt lại theo server
+  return { readiness, list };
+}
+
 const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']; // index + 1 = isoDay
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -30,18 +38,23 @@ export const RemindersScreen: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [needExactAlarm, setNeedExactAlarm] = useState(false);
 
-  const reload = useCallback(async () => {
-    const readiness = await ensureNotificationSetup();
-    setNeedExactAlarm(!readiness.exactAlarm);
-    if (!readiness.granted) setMessage('Bạn chưa cho phép thông báo. Hãy bật trong Cài đặt.');
-    const list = await listReminders();
-    setItems(list);
-    await syncAllSchedules(list); // server là nguồn sự thật → máy đặt lại theo server
-  }, []);
-
   useEffect(() => {
-    if (user) reload().catch((e: Error) => setMessage(e.message));
-  }, [user, reload]);
+    if (!user) return undefined;
+    let active = true;
+    loadReminders()
+      .then(({ readiness, list }) => {
+        if (!active) return;
+        setNeedExactAlarm(!readiness.exactAlarm);
+        if (!readiness.granted) setMessage('Bạn chưa cho phép thông báo. Hãy bật trong Cài đặt.');
+        setItems(list);
+      })
+      .catch((e: unknown) => {
+        if (active) setMessage(e instanceof Error ? e.message : 'Không tải được lịch nhắc.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const run = async (task: () => Promise<void>) => {
     setBusy(true);

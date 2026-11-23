@@ -17,6 +17,15 @@ jest.mock('react-native-safe-area-context', () =>
   jest.requireActual('react-native-safe-area-context/jest/mock').default,
 );
 
+// [TV4] AppNavigator giờ nạp màn hình Lịch nhắc → kéo theo Supabase/AsyncStorage (native).
+// Test điều hướng không cần backend nên giả lập client Supabase giống các test Auth.
+jest.mock('../src/services/supabase', () => ({
+  supabase: {
+    auth: { getSession: jest.fn(async () => ({ data: { session: null }, error: null })) },
+    from: jest.fn(),
+  },
+}));
+
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
 
