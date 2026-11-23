@@ -1,3 +1,4 @@
+import { cancelAllReminders } from '../../reminders/services/reminder-scheduler';
 import { createContext, useCallback, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { AppState, Platform } from 'react-native';
 import type { Session, User } from '@supabase/supabase-js';
@@ -49,6 +50,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!active || (event === 'INITIAL_SESSION' && sessionChanged)) return;
       if (event !== 'INITIAL_SESSION') sessionChanged = true;
       // Keep this callback synchronous to avoid re-entering the SDK's auth lock.
+      // [TV4] Đăng xuất → hủy toàn bộ lời nhắc của tài khoản cũ (tình huống 4).
+      if (event === 'SIGNED_OUT' && Platform.OS !== 'web') void cancelAllReminders();
       setSession(nextSession);
       if (event === 'PASSWORD_RECOVERY' && nextSession) {
         recoveryUserId.current = nextSession.user.id;

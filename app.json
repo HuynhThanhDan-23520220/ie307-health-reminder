@@ -5,14 +5,21 @@
     "version": "1.0.0",
     "scheme": "breakflow",
     "orientation": "portrait",
-    "plugins": ["expo-secure-store"],
+    "plugins": [
+      "expo-secure-store"
+    ],
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ie307.breakflow"
     },
     "android": {
-      "package": "com.ie307.breakflow"
+      "package": "com.ie307.breakflow",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ]
     }
   }
 }
